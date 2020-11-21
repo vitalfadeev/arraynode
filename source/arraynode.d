@@ -26,10 +26,10 @@ mixin template ArrayNode( T )
     {
         assert( parent !is null );
 
-        auto thisPtr = &this;
+        auto thisPtr = cast( T* ) this;
 
         if ( thisPtr != parent.childs.ptr )
-            return thisPtr - 1;
+            return *( thisPtr - 1 );
         else
             return null;
     }
@@ -38,10 +38,10 @@ mixin template ArrayNode( T )
     {
         assert( parent !is null );
 
-        auto thisPtr = &this;
+        auto thisPtr = cast( T* ) this;
 
         if ( thisPtr != parent.childs.ptr + parent.childs.length  )
-            return thisPtr + 1;
+            return *( thisPtr + 1 );
         else
             return null;
     }
@@ -76,7 +76,7 @@ mixin template ArrayNode( T )
     /** */
     T insertChildBefore( T )( T child, T before )
     {
-        import std.algorythm : countUntil;
+        import std.algorithm : countUntil;
 
         // Remove from parent
         if ( child.parent !is null )
@@ -113,7 +113,7 @@ mixin template ArrayNode( T )
     /** */
     void removeChild( T c )
     {
-        import std.algorythm : countUntil;
+        import std.algorithm : countUntil;
 
         assert( c !is null );
 
@@ -226,7 +226,7 @@ mixin template ArrayNode( T )
             if ( cur.hasChilds )
             {
                 stack ~= cur;
-                cur = cur[ 0 ];
+                cur = cur.childs[ 0 ];
             }
             else // in width
             {
