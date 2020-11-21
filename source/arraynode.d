@@ -1,4 +1,3 @@
-
 mixin template ArrayNode( T )
 {
     T   parent;
@@ -10,13 +9,11 @@ mixin template ArrayNode( T )
     // childs
     T firstChild()
     {
-        assert( parent !is null );
-        return parent.childs[ 0 ];
+        return childs[ 0 ];
     }
 
     T lastChild()
     {
-        assert( parent !is null );
         assert( parent.childs.length > 0 );
         return parent.childs[ $-1 ];
     }
@@ -36,14 +33,31 @@ mixin template ArrayNode( T )
 
     T nextSibling()
     {
-        assert( parent !is null );
-
-        auto thisPtr = cast( T* ) this;
-
-        if ( thisPtr != parent.childs.ptr + parent.childs.length  )
-            return *( thisPtr + 1 );
-        else
+        // No Siblings when no Parent
+        if ( parent is null )
+        {
             return null;
+        }
+
+        //
+        import std.algorithm : countUntil;
+        auto pos = parent.childs.countUntil( this );
+        pos += 1;
+
+        // last
+        if ( pos == parent.childs.length )
+            return null;
+        else
+            return parent.childs[ pos ];
+
+        //T* thisPtr = cast( T* ) this;
+        //thisPtr += 1;
+
+        //// over last
+        //if ( thisPtr == ( parent.childs.ptr + parent.childs.length ) )
+        //    return null;
+        //else // inside parent.childs
+        //    return *thisPtr;
     }
 
 
@@ -200,13 +214,6 @@ mixin template ArrayNode( T )
 
 
     /** */
-    auto inDepthIterator()
-    {
-        return InDepthIterator( this );
-    }
-
-
-    /** */
     struct InDepthIterator
     {
         T   cur;
@@ -244,15 +251,26 @@ mixin template ArrayNode( T )
                         cur = cur.nextSibling; // RIGHT
                         goto l1;
                     }
-                    else
-                    {
-                        return;                // FINISH
-                    }
                 }
             }
         }
 
     }
+
+
+    /** */
+    auto inDepthIterator()
+    {
+        return InDepthIterator( this );
+    }
+
+
+    /** */
+    auto inDepthChildIterator()
+    {
+        return InDepthIterator( this.firstChild );
+    }
+
 
 
     /** */
@@ -394,9 +412,18 @@ mixin template ArrayNode( T )
 ///
 unittest
 {
+    import std.format : format;
+
+
     class Node
     {
         mixin ArrayNode!( typeof(this) );
+
+        override
+        string toString()
+        {
+            return format!"Node: 0x%s"( cast( void* ) this );
+        }
     }
 
     //
@@ -444,6 +471,10 @@ unittest
     a.appendChild( c );
     a.appendChild( d );
     b.appendChild( e );
+
+    //
+    assert( b.nextSibling is c );
+    assert( c.nextSibling is d );
 
     //
     assert( a.findFirst( a ) == a );
