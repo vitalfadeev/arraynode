@@ -9,26 +9,45 @@ mixin template ArrayNode( T )
     // childs
     T firstChild()
     {
-        return childs[ 0 ];
+        if ( hasChilds )
+            return childs[ 0 ];
+        else
+            return null;
     }
 
     T lastChild()
     {
-        assert( parent.childs.length > 0 );
-        return parent.childs[ $-1 ];
+        if ( hasChilds )
+            return childs[ $-1 ];
+        else
+            return null;
     }
 
     // siblings
     T prevSibling()
     {
-        assert( parent !is null );
-
-        auto thisPtr = cast( T* ) this;
-
-        if ( thisPtr != parent.childs.ptr )
-            return *( thisPtr - 1 );
-        else
+        // No Siblings when no Parent
+        if ( parent is null )
+        {
             return null;
+        }
+
+        //
+        import std.algorithm : countUntil;
+        auto pos = parent.childs.countUntil( this );
+
+        // last
+        if ( pos == 0 )
+            return null;
+        else
+            return parent.childs[ pos - 1 ];
+
+        //auto thisPtr = cast( T* ) this;
+
+        //if ( thisPtr != parent.childs.ptr )
+        //    return *( thisPtr - 1 );
+        //else
+        //    return null;
     }
 
     T nextSibling()
