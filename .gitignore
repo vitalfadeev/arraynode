@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/arraynode
+arraynode.so
+arraynode.dylib
+arraynode.dll
+arraynode.a
+arraynode.lib
+arraynode-test-*
+*.exe
+*.o
+*.obj
+*.lst

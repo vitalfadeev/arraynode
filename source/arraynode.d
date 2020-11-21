@@ -1,0 +1,482 @@
+
+mixin template ArrayNode( T )
+{
+    T   parent;
+    T[] childs;
+
+
+    import std.traits : isCallable;
+
+    // childs
+    T firstChild()
+    {
+        assert( parent !is null );
+        return parent.childs[ 0 ];
+    }
+
+    T lastChild()
+    {
+        assert( parent !is null );
+        assert( parent.childs.length > 0 );
+        return parent.childs[ $-1 ];
+    }
+
+    // siblings
+    T prevSibling()
+    {
+        assert( parent !is null );
+
+        auto thisPtr = &this;
+
+        if ( thisPtr != parent.childs.ptr )
+            return thisPtr - 1;
+        else
+            return null;
+    }
+
+    T nextSibling()
+    {
+        assert( parent !is null );
+
+        auto thisPtr = &this;
+
+        if ( thisPtr != parent.childs.ptr + parent.childs.length  )
+            return thisPtr + 1;
+        else
+            return null;
+    }
+
+
+    /** */
+    pragma( inline )
+    bool hasChilds()
+    {
+        return childs.length > 0;
+    }
+
+
+    /** */
+    T appendChild( T )( T child )
+    {
+        // Remove from parent
+        if ( child.parent !is null )
+        {
+            child.removeFromParent();
+        }
+
+        child.parent = this;
+
+        // Add
+        childs ~= child;
+
+        return child;
+    }
+
+
+    /** */
+    T insertChildBefore( T )( T child, T before )
+    {
+        import std.algorythm : countUntil;
+
+        // Remove from parent
+        if ( child.parent !is null )
+        {
+            child.removeFromParent();
+        }
+
+        //
+        child.parent = this;
+
+        // Validate
+        assert( before.parent is this );
+
+        // Insert
+        auto pos = childs.countUntil( before );
+
+        assert( pos != -1 );
+
+        childs = childs[ 0 .. pos ] ~ child ~ childs[ pos .. $ ];
+
+        return child;
+    }
+
+
+    /** */
+    void removeFromParent()
+    {
+        assert( parent !is null );
+
+        parent.removeChild( this );
+    }
+
+
+    /** */
+    void removeChild( T c )
+    {
+        import std.algorythm : countUntil;
+
+        assert( c !is null );
+
+        // Parent
+        c.parent = null;
+
+        // Childs
+        auto pos = childs.countUntil( c );
+
+        assert( pos != -1 );
+
+        childs = childs[ 0 .. pos ] ~ childs[ pos+1 .. $ ];
+    }
+
+
+    /** */
+    void removeChilds()
+    {
+        childs = [];
+    }
+
+
+    /** */
+    @property 
+    size_t childsCount()
+    {
+        return childs.length;
+    }
+
+
+    /** */
+    T findDeepest( FUNC )( FUNC func )
+      if ( isCallable!FUNC )
+    {
+        foreach ( a; childs )
+        {
+            // Found
+            if ( func( a ) )
+            {
+                // Test his childs. Recursive
+                auto c = a.findDeepest( func );
+
+                if ( c is null )
+                    return a;
+                else
+                    return c;
+            }
+        }
+
+        return null;
+    }
+
+
+    /** */
+    T findFirst( alias IteratorFactory = inDepthIterator, FUNC )( FUNC func )
+      if ( isCallable!FUNC )
+    {
+        foreach ( a; IteratorFactory() )
+        {
+            if ( func( a ) )
+            {
+                return a;
+            }
+        }
+
+        return null;
+    }
+
+
+    /** */
+    T findFirst( alias IteratorFactory = inDepthIterator, T )( T needle )
+      if ( !isCallable!T )
+    {
+        foreach( a; IteratorFactory() )
+        {
+            if ( a == needle )
+            {
+                return a;
+            }
+        }
+
+        return null;
+    }
+
+
+    /** */
+    auto inDepthIterator()
+    {
+        return InDepthIterator( this );
+    }
+
+
+    /** */
+    struct InDepthIterator
+    {
+        T   cur;
+        T[] stack;
+
+    public:
+        // ForwardRange
+        @property bool empty()    { return cur is null; }
+        @property T    front()    { return cur; }
+
+        void popFront()
+        {
+            import std.range.primitives : back;
+            import std.range.primitives : popBack;
+
+            // in depth
+            if ( cur.hasChilds )
+            {
+                stack ~= cur;
+                cur = cur[ 0 ];
+            }
+            else // in width
+            {
+                cur = cur.nextSibling;         // RIGHT
+
+            l1:
+                // No next Sibling 
+                if ( cur is null )
+                {
+                    // Go to Parent
+                    if ( stack.length != 0 )
+                    {
+                        cur = stack.back;      // UP
+                        stack.popBack();       // 
+                        cur = cur.nextSibling; // RIGHT
+                        goto l1;
+                    }
+                    else
+                    {
+                        return;                // FINISH
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    /** */
+    struct PlainIterator
+    {
+        T cur;
+
+    public:
+        // ForwardRange
+        @property bool empty()    { return cur is null; }
+        @property T    front()    { return cur; }
+
+        void popFront()
+        {
+            cur = cur.nextSibling;         // RIGHT
+        }
+    }
+
+
+    /** */
+    auto plainChildIterator()
+    {
+        return PlainIterator( this.firstChild );
+    }
+
+
+    /** */
+    struct ParentIterator
+    {
+        T cur;
+
+    public:
+        // ForwardRange
+        @property bool empty()    { return cur is null; }
+        @property T    front()    { return cur; }
+
+        void popFront()
+        {
+            cur = cur.parent;              // UP
+        }
+
+    }
+
+
+    /** */
+    auto parentIterator()
+    {
+        return ParentIterator( this.parent );
+    }
+
+
+    /** */
+    T findParent( FUNC )( FUNC func )
+    {
+        auto scan = this.parent;
+
+        while ( scan !is null )
+        {
+            if ( func( scan ) )
+            {
+                return scan;
+            }
+
+            scan = scan.parent;
+        }
+
+        return null;
+    }
+
+
+    /** */
+    T root()
+    {
+        auto scan = this.parent;
+
+        while ( scan !is null )
+        {
+            if ( scan.parent is null )
+            {
+                return scan;
+            }
+
+            scan = scan.parent;
+        }
+
+        return null;
+    }
+
+
+    /** */
+    CLS findParentClass( CLS )()
+    {
+        import ui.tools : instanceof;
+        return cast( CLS ) findParent( ( T a ) => ( a.instanceof!CLS ) );
+    }
+
+
+    /** */
+    void each( alias IteratorFactory = inDepthIterator, FUNC )( FUNC func )
+    {
+        foreach( a; IteratorFactory() )
+        {
+            func( a );
+        }
+    }
+
+
+    /** */
+    void eachChild( alias IteratorFactory = inDepthChildIterator, FUNC )( FUNC func )
+    {
+        foreach( a; IteratorFactory() )
+        {
+            func( a );
+        }
+    }
+
+
+    /** */
+    void eachChildPlain( FUNC )( FUNC func )
+    {
+        foreach( a; plainChildIterator() )
+        {
+            func( a );
+        }
+    }
+
+
+    /** */
+    void eachParent( alias IteratorFactory = parentIterator, FUNC )( FUNC func )
+    {
+        foreach( a; IteratorFactory() )
+        {
+            func( a );
+        }
+    }
+}
+
+
+///
+unittest
+{
+    class Node
+    {
+        mixin ArrayNode!( typeof(this) );
+    }
+
+    //
+    auto root     = new Node;
+    auto child    = new Node;
+    auto outsider = new Node;
+
+    root.appendChild( child );
+
+    // 
+    uint counter;
+    root.each( ( Node a ) => ( counter += 1 ) );
+    assert( counter == 2 );
+
+    // 
+    uint childCounter;
+    root.eachChild( ( Node a ) => ( childCounter += 1 ) );
+    assert( childCounter == 1 );
+
+    // 
+    auto found = root.findFirst( ( Node a ) => ( a == child ) );
+    assert( found !is null );
+
+    // 
+    found = root.findFirst( ( Node a ) => ( a == outsider ) );
+    assert( found is null );
+
+    // 
+    assert( root.findFirst( child ) !is null );
+    assert( root.findFirst( outsider ) is null );
+
+    //
+    auto a = new Node;
+    auto b = new Node;
+    auto c = new Node;
+    auto d = new Node;
+    auto e = new Node;
+
+    //     a
+    //   / | \
+    //  b  c   d
+    //  |
+    //  e
+    a.appendChild( b );
+    a.appendChild( c );
+    a.appendChild( d );
+    b.appendChild( e );
+
+    //
+    assert( a.findFirst( a ) == a );
+    assert( a.findFirst( b ) == b );
+    assert( a.findFirst( c ) == c );
+    assert( a.findFirst( d ) == d );
+    assert( a.findFirst( e ) == e );
+    assert( a.findFirst( ( Node node ) => ( node == e ) ) == e );
+    assert( a.findFirst( ( Node node ) => ( node == d ) ) == d );
+    assert( a.findFirst( ( Node node ) => ( node == outsider ) ) is null );
+
+    //
+    Node[] nodes;
+    a.each( ( Node node ) => ( nodes ~= node ) );
+    assert( nodes == [ a, b, e, c, d ] );
+
+    //
+    Node[] childNode;
+    a.eachChild( ( Node node ) => ( childNode ~= node ) );
+    assert( childNode == [ b, e, c, d ] );
+
+    //
+    Node[] plainChildNode;
+    a.eachChild!( a.plainChildIterator )( ( Node node ) => ( plainChildNode ~= node ) );
+    assert( plainChildNode == [ b, c, d ] );
+
+    //
+    Node[] parentNodes;
+    a.eachParent( ( Node node ) => ( parentNodes ~= node ) );
+    assert( parentNodes.length == 0 );
+
+    e.eachParent( ( Node node ) => ( parentNodes ~= node ) );
+    assert( parentNodes == [ b, a ] );
+}
+
+
