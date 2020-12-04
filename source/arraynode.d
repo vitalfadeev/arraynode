@@ -144,22 +144,22 @@ mixin template ArrayNode( T )
 
 
     /** */
-    void removeChild( T c )
-    {
-        import std.algorithm : countUntil;
+    //void removeChild( T c )
+    //{
+    //    import std.algorithm : countUntil;
 
-        assert( c !is null );
+    //    assert( c !is null );
 
-        // Parent
-        c.parent = null;
+    //    // Parent
+    //    c.parent = null;
 
-        // Childs
-        auto pos = childs.countUntil( c );
+    //    // Childs
+    //    auto pos = childs.countUntil( c );
 
-        assert( pos != -1 );
+    //    assert( pos != -1 );
 
-        childs = childs[ 0 .. pos ] ~ childs[ pos+1 .. $ ];
-    }
+    //    childs = childs[ 0 .. pos ] ~ childs[ pos+1 .. $ ];
+    //}
 
 
     /** */
