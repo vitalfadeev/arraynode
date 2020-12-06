@@ -438,6 +438,11 @@ unittest
     {
         mixin ArrayNode!( typeof(this) );
 
+        void removeChild( Node child )
+        {
+            //
+        }
+
         override
         string toString()
         {
