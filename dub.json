@@ -4,5 +4,5 @@
 	"description" : "A minimal D application.",
 	"license"     : "proprietary",
 	"name"        : "arraynode",
-        "targetType"  : "sourceLibrary"
+    "targetType"  : "sourceLibrary"
 }
