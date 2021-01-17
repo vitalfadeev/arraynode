@@ -197,7 +197,7 @@ mixin template ArrayNode( T )
     /** */
     void removeChilds()
     {
-        childs = [];
+        childs.length = 0;
     }
 
 
