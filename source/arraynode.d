@@ -6,6 +6,7 @@ mixin template ArrayNode( T )
 
     import std.traits : isCallable;
 
+
     // childs
     T firstChild()
     {
@@ -89,7 +90,7 @@ mixin template ArrayNode( T )
 
 
     /** */
-    T appendChild( T )( T child )
+    TC appendChild( TC )( TC child )
     {
         // Remove from parent
         if ( child.parent !is null )
@@ -97,7 +98,7 @@ mixin template ArrayNode( T )
             child.removeFromParent();
         }
 
-        child.parent = this;
+        child.parent = cast( T ) this;
 
         // Add
         childs ~= child;
@@ -149,7 +150,7 @@ mixin template ArrayNode( T )
         }
 
         //
-        child.parent = this;
+        child.parent = cast( Dragable ) this;
 
         // Validate
         assert( after.parent is this );
@@ -172,6 +173,27 @@ mixin template ArrayNode( T )
         assert( parent !is null );
 
         parent.removeChild( this );
+    }
+
+
+    /** */
+    void removeChild( T c )
+    {
+        import std.algorithm : countUntil;
+        import std.array     : replaceInPlace;
+
+        assert( c !is null );
+
+        // Parent
+        c.parent = null;
+
+        // Childs
+        auto pos = childs.countUntil( c );
+
+        assert( pos != -1 );
+
+        //childs = childs[ 0 .. pos ] ~ childs[ pos+1 .. $ ];
+        childs.replaceInPlace( pos, pos + 1, cast( typeof( childs ) ) [] );
     }
 
 
@@ -312,7 +334,7 @@ mixin template ArrayNode( T )
     /** */
     auto inDepthIterator()
     {
-        return InDepthIterator( this );
+        return InDepthIterator( cast( T ) this );
     }
 
 
