@@ -108,7 +108,7 @@ mixin template ArrayNode( T )
 
 
     /** */
-    T insertChildBefore( T )( T child, T before )
+    TC insertChildBefore( TC )( TC child, T before )
     {
         import std.algorithm : countUntil;
         import std.array     : insertInPlace;
@@ -120,7 +120,7 @@ mixin template ArrayNode( T )
         }
 
         //
-        child.parent = this;
+        child.parent = cast( T ) this;
 
         // Validate
         assert( before.parent is this );
