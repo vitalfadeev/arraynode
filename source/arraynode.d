@@ -108,6 +108,30 @@ mixin template ArrayNode( T )
 
 
     /** */
+    TC insertChildAt( TC )( TC child, size_t pos )
+    {
+        import std.array     : insertInPlace;
+
+        // Remove from parent
+        if ( child.parent !is null )
+        {
+            child.removeFromParent();
+        }
+
+        //
+        child.parent = cast( T ) this;
+
+        // Validate
+        assert( pos < childs.length );
+
+        // Insert
+        childs.insertInPlace( pos, cast( typeof( childs ) ) [ child ] );
+
+        return child;
+    }
+
+
+    /** */
     TC insertChildBefore( TC )( TC child, T before )
     {
         import std.algorithm : countUntil;
