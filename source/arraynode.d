@@ -33,15 +33,17 @@ mixin template ArrayNode( T )
             return null;
         }
 
+        assert( parent.instanceof!Childable );
+
         //
         import std.algorithm : countUntil;
-        auto pos = parent.childs.countUntil( this );
+        auto pos = ( cast( Childable ) parent ).childs.countUntil( this );
 
         // last
         if ( pos == 0 )
             return null;
         else
-            return parent.childs[ pos - 1 ];
+            return ( cast( Childable ) parent ).childs[ pos - 1 ];
 
         //auto thisPtr = cast( T* ) this;
 
@@ -59,16 +61,18 @@ mixin template ArrayNode( T )
             return null;
         }
 
+        assert( parent.instanceof!Childable );
+
         //
         import std.algorithm : countUntil;
-        auto pos = parent.childs.countUntil( this );
+        auto pos = ( cast( Childable ) parent ).childs.countUntil( this );
         pos += 1;
 
         // last
-        if ( pos == parent.childs.length )
+        if ( pos == ( cast( Childable ) parent ).childs.length )
             return null;
         else
-            return parent.childs[ pos ];
+            return ( cast( Childable ) parent ).childs[ pos ];
 
         //T* thisPtr = cast( T* ) this;
         //thisPtr += 1;
@@ -195,8 +199,9 @@ mixin template ArrayNode( T )
     void removeFromParent()
     {
         assert( parent !is null );
+        assert( parent.instanceof!Childable );
 
-        parent.removeChild( this );
+        ( cast( Childable ) parent ).removeChild( this );
     }
 
 
@@ -207,9 +212,10 @@ mixin template ArrayNode( T )
         import std.array     : replaceInPlace;
 
         assert( c !is null );
+        assert( c.instanceof!Childable );
 
         // Parent
-        c.parent = null;
+        ( cast( Childable ) c ).parent = null;
 
         // Childs
         auto pos = childs.countUntil( c );
@@ -326,15 +332,17 @@ mixin template ArrayNode( T )
             import std.range.primitives : back;
             import std.range.primitives : popBack;
 
+            assert( cur.instanceof!Childable );
+
             // in depth
-            if ( cur.hasChilds )
+            if ( ( cast( Childable ) cur ).hasChilds )
             {
                 stack ~= cur;
-                cur = cur.childs[ 0 ];
+                cur = ( cast( Childable ) cur ).childs[ 0 ];
             }
             else // in width
             {
-                cur = cur.nextSibling;         // RIGHT
+                cur = ( cast( Childable ) cur ).nextSibling;         // RIGHT
 
             l1:
                 // No next Sibling 
@@ -345,7 +353,11 @@ mixin template ArrayNode( T )
                     {
                         cur = stack.back;      // UP
                         stack.popBack();       // 
-                        cur = cur.nextSibling; // RIGHT
+
+                        assert( cur.instanceof!Childable );
+
+                        cur = ( cast( Childable ) cur ).nextSibling; // RIGHT
+
                         goto l1;
                     }
                 }
@@ -382,7 +394,8 @@ mixin template ArrayNode( T )
 
         void popFront()
         {
-            cur = cur.nextSibling;         // RIGHT
+            assert( cur.instanceof!Childable );
+            cur = ( cast( Childable ) cur ).nextSibling;         // RIGHT
         }
     }
 
@@ -406,7 +419,8 @@ mixin template ArrayNode( T )
 
         void popFront()
         {
-            cur = cur.parent;              // UP
+            assert( cur.instanceof!Childable );
+            cur = ( cast( Childable ) cur ).parent;              // UP
         }
 
     }
@@ -431,7 +445,9 @@ mixin template ArrayNode( T )
                 return scan;
             }
 
-            scan = scan.parent;
+            assert( scan.instanceof!Childable );
+
+            scan = ( cast( Childable ) scan ).parent;
         }
 
         return null;
@@ -445,12 +461,14 @@ mixin template ArrayNode( T )
 
         while ( scan !is null )
         {
-            if ( scan.parent is null )
+            assert( scan.instanceof!Childable );
+
+            if ( ( cast( Childable ) scan ).parent is null )
             {
                 return scan;
             }
 
-            scan = scan.parent;
+            scan = ( cast( Childable ) scan ).parent;
         }
 
         return null;
